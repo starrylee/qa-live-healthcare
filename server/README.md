@@ -79,68 +79,192 @@ java -jar target/qa-service-user-0.0.1-SNAPSHOT.jar
 ### 2.1 整体项目结构
 
 ```
-server/
-├── qa-service-user/              # 用户服务
-│   ├── pom.xml                   # Maven 配置
-│   ├── mvnw / mvnw.cmd           # Maven Wrapper
-│   ├── start.sh / stop.sh        # 应用管理脚本
-│   ├── restart.sh / status.sh    # 应用管理脚本
-│   ├── README.md                 # 服务文档
-│   └── src/
-│       ├── main/
-│       │   ├── java/com/leansofx/qaserviceuser/
-│       │   │   ├── QaServiceUserApplication.java    # 启动类
-│       │   │   ├── config/
-│       │   │   │   └── CorsConfig.java              # 跨域配置
-│       │   │   └── controller/
-│       │   │       └── TestController.java          # 测试接口
-│       │   └── resources/
-│       │       └── application.properties           # 应用配置
-│       └── test/
-│           └── java/com/leansofx/qaserviceuser/
-│               └── QaServiceUserApplicationTests.java
+server/                                              # 后端服务根目录
 │
-├── qa-service-question/          # 问题服务
-│   ├── pom.xml                   # Maven 配置
-│   ├── mvnw / mvnw.cmd           # Maven Wrapper
-│   └── src/
-│       ├── main/
-│       │   ├── java/com/leansofx/qaservicequestion/
-│       │   │   ├── QaServiceQuestionApplication.java  # 启动类
-│       │   │   └── (其他代码待开发)
-│       │   └── resources/
-│       │       └── application.properties
-│       └── test/
-│           └── java/com/leansofx/qaservicequestion/
-│               └── QaServiceQuestionApplicationTests.java
+├── qa-service-user/                                 # 【用户服务】端口: 8080
+│   │
+│   ├── pom.xml                                      # Maven 项目配置
+│   ├── mvnw                                         # Maven Wrapper (Unix)
+│   ├── mvnw.cmd                                     # Maven Wrapper (Windows)
+│   ├── README.md                                    # 服务说明文档
+│   │
+│   ├── start.sh                                     # 应用启动脚本
+│   ├── stop.sh                                      # 应用停止脚本
+│   ├── restart.sh                                   # 应用重启脚本
+│   └── status.sh                                    # 应用状态查询脚本
+│   │
+│   ├── docs/                                        # 服务文档目录
+│   │   ├── api.md                                   # API 接口文档
+│   │   └── project-structure.md                     # 项目结构文档
+│   │
+│   ├── target/                                      # 构建输出目录 (gitignore)
+│   │   └── qa-service-user-0.0.1-SNAPSHOT.jar       # 打包后的可执行 JAR
+│   │
+│   ├── logs/                                        # 日志输出目录
+│   │   └── application.log                          # 应用运行日志
+│   │
+│   ├── qa-service-user.pid                          # 进程 PID 文件
+│   │
+│   └── src/                                         # 源代码目录
+│       │
+│       ├── main/                                    # 主代码目录
+│       │   │
+│       │   ├── java/com/leansofx/qaserviceuser/     # Java 包根目录
+│       │   │   │
+│       │   │   ├── QaServiceUserApplication.java    # 【启动类】Spring Boot 入口
+│       │   │   │
+│       │   │   ├── config/                          # 【配置层】
+│       │   │   │   └── CorsConfig.java              # 跨域配置类
+│       │   │   │
+│       │   │   ├── controller/                      # 【控制层】REST API 接口
+│       │   │   │   └── TestController.java          # 测试控制器
+│       │   │   │
+│       │   │   ├── service/                         # 【服务层】业务逻辑 (待开发)
+│       │   │   │   └── (UserService.java)
+│       │   │   │
+│       │   │   ├── repository/                      # 【数据层】数据访问 (待开发)
+│       │   │   │   └── (UserRepository.java)
+│       │   │   │
+│       │   │   ├── entity/                          # 【实体层】数据模型 (待开发)
+│       │   │   │   └── (User.java)
+│       │   │   │
+│       │   │   ├── dto/                             # 【DTO层】数据传输对象 (待开发)
+│       │   │   │   └── (UserDTO.java)
+│       │   │   │
+│       │   │   └── exception/                       # 【异常层】自定义异常 (待开发)
+│       │   │       └── (GlobalExceptionHandler.java)
+│       │   │
+│       │   └── resources/                           # 资源文件目录
+│       │       ├── application.properties           # 【应用配置文件】
+│       │       ├── application-dev.properties       # 开发环境配置
+│       │       ├── application-prod.properties      # 生产环境配置
+│       │       ├── static/                          # 静态资源
+│       │       └── templates/                       # 模板文件
+│       │
+│       └── test/                                    # 测试代码目录
+│           │
+│           ├── java/com/leansofx/qaserviceuser/     # 测试 Java 包
+│           │   ├── QaServiceUserApplicationTests.java   # 应用上下文测试
+│           │   └── TestQaServiceUserApplication.java    # 测试配置类
+│           │
+│           └── resources/                           # 测试资源文件
+│               └── application-test.properties      # 测试环境配置
 │
-└── qa-service-statistic/         # 统计服务 (待开发)
-    └── (空目录)
+├── qa-service-question/                             # 【问题服务】端口: 8081
+│   │
+│   ├── pom.xml                                      # Maven 项目配置
+│   ├── mvnw                                         # Maven Wrapper (Unix)
+│   ├── mvnw.cmd                                     # Maven Wrapper (Windows)
+│   │
+│   ├── target/                                      # 构建输出目录
+│   │
+│   └── src/                                         # 源代码目录
+│       │
+│       ├── main/                                    # 主代码目录
+│       │   │
+│       │   ├── java/com/leansofx/qaservicequestion/ # Java 包根目录
+│       │   │   │
+│       │   │   ├── QaServiceQuestionApplication.java    # 【启动类】
+│       │   │   │
+│       │   │   ├── config/                          # 【配置层】(待开发)
+│       │   │   ├── controller/                      # 【控制层】(待开发)
+│       │   │   ├── service/                         # 【服务层】(待开发)
+│       │   │   ├── repository/                      # 【数据层】(待开发)
+│       │   │   ├── entity/                          # 【实体层】(待开发)
+│       │   │   ├── dto/                             # 【DTO层】(待开发)
+│       │   │   └── exception/                       # 【异常层】(待开发)
+│       │   │
+│       │   └── resources/                           # 资源文件
+│       │       └── application.properties           # 【应用配置文件】
+│       │
+│       └── test/                                    # 测试代码目录
+│           │
+│           ├── java/com/leansofx/qaservicequestion/ # 测试 Java 包
+│           │   ├── QaServiceQuestionApplicationTests.java   # 应用上下文测试
+│           │   ├── TestQaServiceQuestionApplication.java    # 测试配置类
+│           │   └── TestcontainersConfiguration.java         # Testcontainers 配置
+│           │
+│           └── resources/                           # 测试资源文件
+│
+└── qa-service-statistic/                            # 【统计服务】(待开发)
+    │
+    ├── pom.xml                                      # (待创建)
+    ├── mvnw                                         # (待创建)
+    ├── mvnw.cmd                                     # (待创建)
+    │
+    └── src/                                         # (待创建)
+        ├── main/
+        └── test/
 ```
 
-### 2.2 模块功能说明
+### 2.2 分层架构说明
 
-#### qa-service-user（用户服务）
+每个微服务采用经典的分层架构设计：
 
-| 模块 | 功能 | 关键文件 |
-|------|------|----------|
-| **启动模块** | Spring Boot 应用启动 | `QaServiceUserApplication.java` |
-| **配置模块** | CORS 跨域配置 | `config/CorsConfig.java` |
-| **控制层** | REST API 接口 | `controller/TestController.java` |
-| **监控模块** | Actuator 健康检查 | `application.properties` |
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              【控制层】Controller                              │
+│   职责: 接收 HTTP 请求, 调用 Service, 返回响应                                   │
+│   文件: TestController.java                                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                              【服务层】Service                                 │
+│   职责: 业务逻辑处理, 事务管理                                                  │
+│   文件: (UserService.java, QuestionService.java 等 - 待开发)                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                              【数据层】Repository                              │
+│   职责: 数据库访问, CRUD 操作                                                   │
+│   文件: (UserRepository.java, QuestionRepository.java 等 - 待开发)             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                              【实体层】Entity                                  │
+│   职责: 数据模型定义, 与数据库表映射                                              │
+│   文件: (User.java, Question.java 等 - 待开发)                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                              【配置层】Config                                  │
+│   职责: 框架配置, 跨域设置, Bean 定义                                           │
+│   文件: CorsConfig.java                                                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
 
-#### qa-service-question（问题服务）
+### 2.3 模块功能说明
 
-| 模块 | 功能 | 关键文件 |
-|------|------|----------|
-| **启动模块** | Spring Boot 应用启动 | `QaServiceQuestionApplication.java` |
-| **测试模块** | Testcontainers 集成测试 | `TestcontainersConfiguration.java` |
+#### qa-service-user（用户服务）- 端口 8080
 
-#### qa-service-statistic（统计服务）
+| 层级 | 模块 | 功能说明 | 关键文件/目录 | 状态 |
+|------|------|----------|---------------|------|
+| **根目录** | 构建配置 | Maven 项目配置, 依赖管理 | `pom.xml` | ✅ 已配置 |
+| **根目录** | 构建工具 | Maven Wrapper 脚本 | `mvnw`, `mvnw.cmd` | ✅ 已配置 |
+| **根目录** | 运维脚本 | 应用生命周期管理 | `start.sh`, `stop.sh`, `restart.sh`, `status.sh` | ✅ 已配置 |
+| **启动层** | 启动类 | Spring Boot 应用入口 | `QaServiceUserApplication.java` | ✅ 已开发 |
+| **配置层** | 跨域配置 | CORS 跨域资源共享 | `config/CorsConfig.java` | ✅ 已开发 |
+| **控制层** | 测试接口 | REST API 测试控制器 | `controller/TestController.java` | ✅ 已开发 |
+| **服务层** | 用户业务 | 用户管理业务逻辑 | `service/` | ⬜ 待开发 |
+| **数据层** | 用户数据 | 用户数据访问 | `repository/` | ⬜ 待开发 |
+| **实体层** | 用户模型 | 用户实体类定义 | `entity/` | ⬜ 待开发 |
+| **配置层** | 应用配置 | Spring Boot 配置 | `application.properties` | ✅ 已配置 |
+| **测试层** | 单元测试 | Spring Boot 测试 | `test/` | ✅ 已配置 |
 
-当前为空目录，待开发。
+#### qa-service-question（问题服务）- 端口 8081
 
-### 2.3 模块依赖关系
+| 层级 | 模块 | 功能说明 | 关键文件/目录 | 状态 |
+|------|------|----------|---------------|------|
+| **根目录** | 构建配置 | Maven 项目配置 | `pom.xml` | ✅ 已配置 |
+| **根目录** | 构建工具 | Maven Wrapper 脚本 | `mvnw`, `mvnw.cmd` | ✅ 已配置 |
+| **启动层** | 启动类 | Spring Boot 应用入口 | `QaServiceQuestionApplication.java` | ✅ 已开发 |
+| **配置层** | 框架配置 | 服务配置类 | `config/` | ⬜ 待开发 |
+| **控制层** | 接口层 | REST API 控制器 | `controller/` | ⬜ 待开发 |
+| **服务层** | 业务层 | 问题管理业务逻辑 | `service/` | ⬜ 待开发 |
+| **数据层** | 数据访问 | 问题数据访问 | `repository/` | ⬜ 待开发 |
+| **实体层** | 数据模型 | 问题实体类定义 | `entity/` | ⬜ 待开发 |
+| **配置层** | 应用配置 | Spring Boot 配置 | `application.properties` | ✅ 已配置 |
+| **测试层** | 集成测试 | Testcontainers 测试配置 | `TestcontainersConfiguration.java` | ✅ 已配置 |
+
+#### qa-service-statistic（统计服务）- 端口待定
+
+| 层级 | 模块 | 功能说明 | 关键文件/目录 | 状态 |
+|------|------|----------|---------------|------|
+| **全部** | - | 空目录，待开发 | - | ⬜ 待创建 |
+
+### 2.4 模块依赖关系
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
