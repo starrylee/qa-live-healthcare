@@ -116,126 +116,208 @@ cd web/qa-web && npm run dev
 
 ## 二、代码层级与模块结构
 
-### 2.1 项目整体架构
+### 2.1 项目完整目录树
 
 ```
-qa-live-healthcare/
-├── _TRAINING_ASSETS/          # 训练资源文件
-├── server/                    # 后端服务目录
-│   ├── qa-service-user/       # 用户管理微服务
-│   ├── qa-service-question/   # 问题管理微服务
-│   └── qa-service-statistic/  # 统计分析服务 (规划中)
-├── web/                       # 前端应用目录
-│   └── qa-web/                # Vue.js 前端应用
-├── package.json               # 根项目配置
-└── README.md                  # 项目文档
+📦 qa-live-healthcare/
+│
+├── 📁 _TRAINING_ASSETS/                      # 训练资源文件
+│   └── 📄 *.zip                              # 压缩资源包
+│
+├── 📁 server/                                # 🔧 后端服务目录
+│   │
+│   ├── 📁 qa-service-user/                   # 👤 用户管理微服务 (端口:8080)
+│   │   │
+│   │   ├── 📄 pom.xml                        # Maven 依赖配置
+│   │   ├── 📄 mvnw                          # Maven Wrapper (Unix/Linux)
+│   │   ├── 📄 mvnw.cmd                      # Maven Wrapper (Windows)
+│   │   ├── 📄 README.md                     # 服务说明文档
+│   │   ├── 📄 start.sh                      # 启动脚本
+│   │   ├── 📄 stop.sh                       # 停止脚本
+│   │   ├── 📄 restart.sh                    # 重启脚本
+│   │   ├── 📄 status.sh                     # 状态查看脚本
+│   │   │
+│   │   ├── 📁 docs/                         # 📚 项目文档
+│   │   │   ├── 📄 project-structure.md      # 项目结构规范
+│   │   │   └── 📄 api.md                    # API 接口文档
+│   │   │
+│   │   └── 📁 src/                          # 源代码目录
+│   │       │
+│   │       ├── 📁 main/                     # 主要源代码
+│   │       │   │
+│   │       │   ├── 📁 java/com/leansofx/qaserviceuser/
+│   │       │   │   │
+│   │       │   │   ├── 📄 QaServiceUserApplication.java  # ⭐ Spring Boot 启动类
+│   │       │   │   │
+│   │       │   │   ├── 📁 config/           # ⚙️ 配置层
+│   │       │   │   │   └── 📄 CorsConfig.java           # CORS 跨域配置
+│   │       │   │   │
+│   │       │   │   ├── 📁 controller/       # 🎮 控制器层
+│   │       │   │   │   └── 📄 TestController.java       # 测试接口控制器
+│   │       │   │   │
+│   │       │   │   ├── 📁 service/          # 💼 服务层 (待开发)
+│   │       │   │   │   └── impl/            # 服务实现
+│   │       │   │   │
+│   │       │   │   ├── 📁 repository/       # 💾 数据访问层 (待开发)
+│   │       │   │   │
+│   │       │   │   ├── 📁 entity/           # 📊 实体类 (待开发)
+│   │       │   │   │
+│   │       │   │   ├── 📁 dto/              # 📦 数据传输对象 (待开发)
+│   │       │   │   │   ├── request/         # 请求 DTO
+│   │       │   │   │   └── response/        # 响应 DTO
+│   │       │   │   │
+│   │       │   │   ├── 📁 exception/        # ❌ 自定义异常 (待开发)
+│   │       │   │   ├── 📁 enums/            # 📋 枚举类 (待开发)
+│   │       │   │   ├── 📁 util/             # 🔧 工具类 (待开发)
+│   │       │   │   ├── 📁 constant/         # 📌 常量类 (待开发)
+│   │       │   │   ├── 📁 security/         # 🔐 安全相关 (待开发)
+│   │       │   │   ├── 📁 aspect/           # 🎯 切面编程 (待开发)
+│   │       │   │   └── 📁 validation/       # ✅ 自定义验证 (待开发)
+│   │       │   │
+│   │       │   └── 📁 resources/            # 资源文件
+│   │       │       └── 📄 application.properties  # 应用配置文件
+│   │       │
+│   │       └── 📁 test/                     # 🧪 测试代码
+│   │           └── 📁 java/com/leansofx/qaserviceuser/
+│   │               └── 📄 QaServiceUserApplicationTests.java
+│   │
+│   ├── 📁 qa-service-question/               # ❓ 问题管理微服务 (端口:8081)
+│   │   │
+│   │   ├── 📄 pom.xml                        # Maven 依赖配置
+│   │   ├── 📄 mvnw                          # Maven Wrapper (Unix/Linux)
+│   │   ├── 📄 mvnw.cmd                      # Maven Wrapper (Windows)
+│   │   │
+│   │   └── 📁 src/                          # 源代码目录
+│   │       │
+│   │       ├── 📁 main/                     # 主要源代码
+│   │       │   │
+│   │       │   ├── 📁 java/com/leansofx/qaservicequestion/
+│   │       │   │   └── 📄 QaServiceQuestionApplication.java  # ⭐ Spring Boot 启动类
+│   │       │   │
+│   │       │   └── 📁 resources/
+│   │       │       └── 📄 application.properties  # 应用配置文件
+│   │       │
+│   │       └── 📁 test/                     # 🧪 测试代码
+│   │           └── 📁 java/com/leansofx/qaservicequestion/
+│   │               ├── 📄 QaServiceQuestionApplicationTests.java
+│   │               ├── 📄 TestQaServiceQuestionApplication.java
+│   │               └── 📄 TestcontainersConfiguration.java  # Testcontainers 配置
+│   │
+│   └── 📁 qa-service-statistic/              # 📈 统计分析服务 (规划中)
+│       └── 📄 .gitkeep                       # 目录占位文件
+│
+├── 📁 web/                                   # 🌐 前端应用目录
+│   │
+│   └── 📁 qa-web/                            # 💻 Vue.js 前端应用 (端口:5173)
+│       │
+│       ├── 📄 index.html                     # 🚪 HTML 入口文件
+│       ├── 📄 package.json                   # 📦 项目依赖配置
+│       ├── 📄 vite.config.ts                 # ⚡ Vite 构建配置
+│       ├── 📄 tsconfig.json                  # 📘 TypeScript 配置
+│       ├── 📄 tsconfig.app.json              # TypeScript 应用配置
+│       ├── 📄 tsconfig.node.json             # TypeScript Node 配置
+│       ├── 📄 README.md                      # 前端项目说明
+│       ├── 📄 app-management.sh              # 应用管理脚本
+│       │
+│       ├── 📁 docs/                          # 📚 前端文档
+│       ├── 📁 public/                        # 📁 静态资源目录
+│       │
+│       └── 📁 src/                           # 🎨 源代码目录
+│           │
+│           ├── 📄 main.ts                    # ⭐ 应用入口文件
+│           ├── 📄 App.vue                    # 🏠 根组件
+│           ├── 📄 style.css                  # 🎨 全局样式
+│           ├── 📄 vite-env.d.ts              # Vite 类型声明
+│           │
+│           ├── 📁 assets/                    # 🖼️ 静态资源
+│           │   └── 📄 vue.svg                # Vue Logo
+│           │
+│           ├── 📁 components/                # 🧩 公共组件
+│           │   ├── 📄 AppHeader.vue          # 📌 顶部导航栏组件
+│           │   ├── 📄 AppFooter.vue          # 📌 底部页脚组件
+│           │   └── 📄 HelloWorld.vue         # 示例组件
+│           │
+│           ├── 📁 views/                     # 📄 页面组件
+│           │   ├── 📄 Home.vue               # 🏠 首页
+│           │   ├── 📄 Consultation.vue       # 💬 问诊页面
+│           │   ├── 📄 Doctors.vue            # 👨‍⚕️ 医生列表页
+│           │   ├── 📄 DoctorLogin.vue        # 🔐 医生登录页
+│           │   ├── 📄 DoctorRoom.vue         # 🏥 医生诊室页
+│           │   └── 📄 About.vue              # ℹ️ 关于我们页
+│           │
+│           ├── 📁 router/                    # 🔀 路由配置
+│           │   └── 📄 index.ts               # 路由定义文件
+│           │
+│           ├── 📁 store/                     # 🗄️ 状态管理
+│           │   └── 📄 index.ts               # 全局状态 (Vue 3 Reactive)
+│           │
+│           └── 📁 data/                      # 📊 静态数据 (模拟后端)
+│               ├── 📄 doctor-user-list.json  # 医生用户数据
+│               ├── 📄 patient-user.json      # 患者用户数据
+│               └── 📄 question-list.json     # 问题列表数据
+│
+├── 📄 package.json                           # 📦 根项目配置
+└── 📄 README.md                              # 📖 项目文档
 ```
 
-### 2.2 后端模块结构
+### 2.2 模块职责详解
 
-#### 2.2.1 用户管理服务 (qa-service-user)
+#### 2.2.1 后端模块职责
 
-```
-qa-service-user/
-├── pom.xml                           # Maven 配置
-├── src/
-│   ├── main/
-│   │   ├── java/com/leansofx/qaserviceuser/
-│   │   │   ├── QaServiceUserApplication.java   # [启动类] Spring Boot 入口
-│   │   │   ├── config/                         # 配置层
-│   │   │   │   └── CorsConfig.java             # CORS 跨域配置
-│   │   │   ├── controller/                     # 控制器层
-│   │   │   │   └── TestController.java         # 测试接口
-│   │   │   ├── service/                        # 服务层 (待开发)
-│   │   │   ├── repository/                     # 数据访问层 (待开发)
-│   │   │   ├── entity/                         # 实体类 (待开发)
-│   │   │   └── dto/                            # 数据传输对象 (待开发)
-│   │   └── resources/
-│   │       └── application.properties          # 应用配置
-│   └── test/                                   # 测试代码
-├── docs/                                        # 项目文档
-│   ├── project-structure.md                    # 项目结构规范
-│   └── api.md                                  # API 文档
-└── mvnw, mvnw.cmd                              # Maven Wrapper
-```
+| 模块 | 路径 | 职责 | 端口 | 状态 |
+|-----|------|------|------|------|
+| **用户管理服务** | `server/qa-service-user/` | 用户注册、登录、权限管理 | 8080 | 🟢 基础框架完成 |
+| **问题管理服务** | `server/qa-service-question/` | 医疗问题发布、回答、管理 | 8081 | 🟡 框架搭建中 |
+| **统计分析服务** | `server/qa-service-statistic/` | 数据统计、分析、报表 | 待定 | 🔴 规划中 |
 
-**模块职责说明**:
-
-| 包名 | 职责 | 当前状态 |
-|-----|------|---------|
-| `config/` | 全局配置类，如 CORS、数据库、安全配置 | ✅ 已实现 CorsConfig |
-| `controller/` | REST API 控制器，处理 HTTP 请求 | ✅ 已实现 TestController |
-| `service/` | 业务逻辑层，封装核心业务 | ⏳ 待开发 |
-| `repository/` | 数据访问层，操作数据库 | ⏳ 待开发 |
-| `entity/` | 数据库实体类 | ⏳ 待开发 |
-| `dto/` | 数据传输对象，前后端数据交互 | ⏳ 待开发 |
-
-#### 2.2.2 问题管理服务 (qa-service-question)
+#### 2.2.2 后端分层架构职责
 
 ```
-qa-service-question/
-├── pom.xml
-├── src/
-│   ├── main/
-│   │   ├── java/com/leansofx/qaservicequestion/
-│   │   │   └── QaServiceQuestionApplication.java  # [启动类]
-│   │   └── resources/
-│   │       └── application.properties              # 应用配置
-│   └── test/                                       # 测试代码 (含 Testcontainers)
-└── mvnw, mvnw.cmd
+┌─────────────────────────────────────────────────────────────┐
+│                      Controller 层                          │
+│         处理 HTTP 请求，参数验证，响应封装                     │
+│                    [TestController.java]                    │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│                       Service 层                            │
+│         业务逻辑处理，事务管理，数据组装                       │
+│                     [待开发]                                 │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│                     Repository 层                           │
+│         数据访问，CRUD 操作，数据查询                         │
+│                     [待开发]                                 │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│                       Entity 层                             │
+│         数据库实体映射，领域模型                              │
+│                     [待开发]                                 │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-**当前状态**: 基础框架已搭建，业务代码待开发。
+#### 2.2.3 前端模块职责
 
-### 2.3 前端模块结构
+| 目录 | 路径 | 职责 | 关键文件 |
+|-----|------|------|---------|
+| **views/** | `src/views/` | 页面级组件，对应路由 | `Home.vue`, `Consultation.vue` 等 6 个 |
+| **components/** | `src/components/` | 可复用公共组件 | `AppHeader.vue`, `AppFooter.vue` |
+| **router/** | `src/router/` | 路由配置，URL 映射 | `index.ts` |
+| **store/** | `src/store/` | 全局状态管理 | `index.ts` |
+| **data/** | `src/data/` | 静态 JSON 数据模拟 | `doctor-user-list.json` 等 3 个 |
 
-```
-qa-web/
-├── index.html                    # HTML 入口
-├── package.json                  # 项目配置
-├── vite.config.ts               # Vite 构建配置
-├── tsconfig.json                # TypeScript 配置
-├── tsconfig.app.json            # 应用 TS 配置
-├── tsconfig.node.json           # Node 环境 TS 配置
-└── src/
-    ├── main.ts                  # [启动入口] 应用入口
-    ├── App.vue                  # 根组件
-    ├── style.css                # 全局样式
-    │
-    ├── router/                  # 路由配置
-    │   └── index.ts             # 路由定义
-    │
-    ├── store/                   # 状态管理
-    │   └── index.ts             # 全局状态 (Vue 3 Reactive)
-    │
-    ├── views/                   # 页面组件
-    │   ├── Home.vue             # 首页
-    │   ├── Consultation.vue     # 问诊页面
-    │   ├── Doctors.vue          # 医生列表
-    │   ├── DoctorLogin.vue      # 医生登录
-    │   ├── DoctorRoom.vue       # 医生诊室
-    │   └── About.vue            # 关于我们
-    │
-    ├── components/              # 公共组件
-    │   ├── AppHeader.vue        # 顶部导航栏
-    │   ├── AppFooter.vue        # 底部页脚
-    │   └── HelloWorld.vue       # 示例组件
-    │
-    └── data/                    # 静态数据 (模拟后端)
-        ├── doctor-user-list.json    # 医生数据
-        ├── patient-user.json        # 患者数据
-        └── question-list.json       # 问题数据
-```
+### 2.3 前端页面模块详解
 
-**目录职责说明**:
-
-| 目录 | 职责 | 关键文件 |
-|-----|------|---------|
-| `router/` | 页面路由配置，定义 URL 与组件映射 | `index.ts` |
-| `store/` | 全局状态管理，医生/患者/问题数据 | `index.ts` |
-| `views/` | 页面级组件，对应路由 | `Home.vue`, `Consultation.vue` 等 |
-| `components/` | 可复用的公共组件 | `AppHeader.vue`, `AppFooter.vue` |
-| `data/` | 静态 JSON 数据，模拟后端 API | `doctor-user-list.json` 等 |
+| 页面文件 | 路由路径 | 功能描述 | 核心功能 |
+|---------|---------|---------|---------|
+| `Home.vue` | `/` | 首页 | 平台介绍、统计数据、在线医生展示 |
+| `Consultation.vue` | `/consultation` | 问诊页面 | 患者验证、提交问题、查看回复 |
+| `Doctors.vue` | `/doctors` | 医生列表 | 展示所有医生信息 |
+| `DoctorLogin.vue` | `/doctor/login` | 医生登录 | 医生身份验证 |
+| `DoctorRoom.vue` | `/doctor/room/:username` | 医生诊室 | 查看问题、回复患者 |
+| `About.vue` | `/about` | 关于我们 | 平台介绍和联系方式 |
 
 ### 2.4 模块依赖关系
 
