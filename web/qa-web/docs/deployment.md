@@ -18,39 +18,110 @@
 
 ### 2.1 前端部署架构
 
+```mermaid
+graph TB
+    subgraph Browser["客户端浏览器"]
+        User["用户"]
+    end
+    
+    subgraph DockerContainer["Docker 容器"]
+        direction TB
+        
+        subgraph NginxServer["Nginx 服务器 (qa-web)"]
+            direction LR
+            
+            Config["Nginx 配置"]
+            StaticFiles["静态资源<br/>JS/CSS/图片"]
+            IndexHtml["index.html<br/>SPA 入口"]
+            ApiProxy["API 代理<br/>反向代理"]
+        end
+    end
+    
+    subgraph Backend["后端服务"]
+        direction LR
+        UserService["用户服务<br/>qa-service-user:8080"]
+        QuestionService["问题服务<br/>qa-service-question:8081"]
+    end
+    
+    User -->|HTTP/HTTPS<br/>访问 localhost:8088| NginxServer
+    NginxServer -->|请求静态资源| StaticFiles
+    NginxServer -->|前端路由| IndexHtml
+    NginxServer -->|/api/user/*| ApiProxy
+    NginxServer -->|/api/question/*| ApiProxy
+    
+    ApiProxy -->|代理请求| UserService
+    ApiProxy -->|代理请求| QuestionService
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         客户端浏览器                              │
-└─────────────────────────────┬───────────────────────────────────┘
-                              │ HTTPS/HTTP
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                          Nginx 服务器                            │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │                     Nginx 配置                             │  │
-│  │  • 静态资源托管 (JS/CSS/图片)                               │  │
-│  │  • Gzip 压缩                                               │  │
-│  │  • 缓存控制                                                │  │
-│  │  • 前端路由支持 (SPA)                                       │  │
-│  │  • 反向代理到后端服务                                        │  │
-│  └───────────────────────────────────────────────────────────┘  │
-│                              │                                  │
-│          ┌───────────────────┼───────────────────┐              │
-│          │                   │                   │              │
-│          ▼                   ▼                   ▼              │
-│   ┌────────────┐     ┌────────────┐     ┌────────────┐         │
-│   │  index.html│     │static assets│     │  API Proxy │         │
-│   │            │     │ (JS/CSS/Img)│     │            │         │
-│   └────────────┘     └────────────┘     └─────┬──────┘         │
-└─────────────────────────────────────────────────┼───────────────┘
-                                                  │
-                    ┌─────────────────────────────┼─────────────────────────┐
-                    │                             │                         │
-                    ▼                             ▼                         ▼
-         ┌──────────────────┐        ┌──────────────────┐       ┌──────────────┐
-         │ qa-service-user  │        │qa-service-question│       │ qa-service-  │
-         │    :8080         │        │     :8081        │       │  statistic   │
-         └──────────────────┘        └──────────────────┘       └──────────────┘
+
+### 2.2 Docker Compose 全栈部署架构
+
+```mermaid
+graph TB
+    subgraph Host["宿主机 localhost"]
+        direction TB
+        
+        subgraph DockerCompose["Docker Compose 环境"]
+            direction TB
+            
+            subgraph Network["qa-network"]
+                direction LR
+                
+                Web["🌐 前端服务<br/>qa-web<br/>Port: 80<br/>外部: 8088"]
+                UserSvc["⚙️ 用户服务<br/>qa-service-user<br/>Port: 8080<br/>外部: 18080"]
+                QuestionSvc["⚙️ 问题服务<br/>qa-service-question<br/>Port: 8081<br/>外部: 18081"]
+            end
+        end
+        
+        Access8088["http://localhost:8088"] --> Web
+        Access18080["http://localhost:18080"] --> UserSvc
+        Access18081["http://localhost:18081"] --> QuestionSvc
+    end
+    
+    Browser["用户浏览器"] --> Access8088
+    
+    Web -->|/api/user/*| UserSvc
+    Web -->|/api/question/*| QuestionSvc
+    
+    style Web fill:#e1f5fe
+    style UserSvc fill:#f3e5f5
+    style QuestionSvc fill:#f3e5f5
+```
+
+### 2.3 请求流向图
+
+```mermaid
+sequenceDiagram
+    participant Browser as 用户浏览器
+    participant Nginx as Nginx (qa-web)
+    participant UserAPI as 用户服务<br/>qa-service-user
+    participant QuestionAPI as 问题服务<br/>qa-service-question
+    
+    rect rgb(225, 245, 254)
+        Note over Browser,Nginx: 场景 1: 访问前端页面
+        Browser->>Nginx: GET http://localhost:8088/
+        Nginx->>Nginx: try_files 查找静态资源
+        Nginx-->>Browser: 返回 index.html
+        Browser->>Nginx: GET /assets/index.js
+        Nginx-->>Browser: 返回 JS 文件
+    end
+    
+    rect rgb(243, 229, 245)
+        Note over Browser,UserAPI: 场景 2: 调用用户 API
+        Browser->>Nginx: GET /api/user/actuator/health
+        Nginx->>Nginx: location /api/user/ 匹配
+        Nginx->>UserAPI: proxy_pass 转发请求
+        UserAPI-->>Nginx: 返回健康状态
+        Nginx-->>Browser: 返回 JSON 响应
+    end
+    
+    rect rgb(243, 229, 245)
+        Note over Browser,QuestionAPI: 场景 3: 调用问题 API
+        Browser->>Nginx: POST /api/question/
+        Nginx->>Nginx: location /api/question/ 匹配
+        Nginx->>QuestionAPI: proxy_pass 转发请求
+        QuestionAPI-->>Nginx: 返回结果
+        Nginx-->>Browser: 返回 JSON 响应
+    end
 ```
 
 ### 2.2 反向代理配置

@@ -25,25 +25,89 @@
 
 ### 2.2 服务依赖关系
 
+```mermaid
+graph TB
+    subgraph DockerNetwork["Docker Network: qa-network"]
+        direction TB
+        
+        UserService["qa-service-user<br/>:8080"]
+        QuestionService["qa-service-question<br/>:8081"]
+        Frontend["qa-web<br/>(前端 Nginx)"]
+        
+        Frontend -->|HTTP 请求| UserService
+        Frontend -->|HTTP 请求| QuestionService
+    end
+    
+    Browser["用户浏览器"] -->|访问 http://localhost:8088| Frontend
+    Browser -.->|直接访问 API| UserService
+    Browser -.->|直接访问 API| QuestionService
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Docker Network                           │
-│                        qa-network                               │
-│                                                                 │
-│   ┌───────────────────┐     ┌───────────────────┐              │
-│   │  qa-service-user  │◄────┤  qa-service-      │              │
-│   │    :8080          │     │  question         │              │
-│   │                   │     │    :8081          │              │
-│   └─────────┬─────────┘     └─────────┬─────────┘              │
-│             │                         │                        │
-│             └─────────────┬───────────┘                        │
-│                           │                                    │
-│                    ┌──────┴──────┐                            │
-│                    │   qa-web    │                            │
-│                    │   (前端)     │                            │
-│                    └─────────────┘                            │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+
+### 2.3 Docker Compose 部署架构
+
+```mermaid
+graph LR
+    subgraph Host["宿主机"]
+        direction TB
+        
+        subgraph DockerCompose["Docker Compose"]
+            direction TB
+            
+            subgraph Network["qa-network (Bridge)"]
+                direction LR
+                
+                User["用户服务<br/>qa-service-user<br/>Port: 8080<br/>外部: 18080"]
+                Question["问题服务<br/>qa-service-question<br/>Port: 8081<br/>外部: 18081"]
+                Web["前端服务<br/>qa-web<br/>Port: 80<br/>外部: 8088"]
+            end
+        end
+        
+        Port18080["localhost:18080"]
+        Port18081["localhost:18081"]
+        Port8088["localhost:8088"]
+    end
+    
+    Port18080 -->|映射| User
+    Port18081 -->|映射| Question
+    Port8088 -->|映射| Web
+    
+    Web -->|反向代理<br/>/api/user/*| User
+    Web -->|反向代理<br/>/api/question/*| Question
+```
+
+### 2.4 容器启动顺序与时序
+
+```mermaid
+sequenceDiagram
+    participant User as 用户
+    participant DC as Docker Compose
+    participant Network as qa-network
+    participant UserSvc as qa-service-user
+    participant QuestionSvc as qa-service-question
+    participant Web as qa-web
+    
+    User->>DC: docker-compose up -d
+    DC->>Network: 创建网络
+    
+    par 并行启动后端服务
+        DC->>UserSvc: 启动容器
+        UserSvc->>UserSvc: 健康检查<br/>60s 启动期
+        UserSvc-->>DC: healthy
+    and
+        DC->>QuestionSvc: 启动容器
+        QuestionSvc->>QuestionSvc: 健康检查<br/>60s 启动期
+        QuestionSvc-->>DC: healthy
+    end
+    
+    DC->>Web: 启动前端容器<br/>(depends_on: healthy)
+    Web->>Web: 健康检查
+    Web-->>DC: healthy
+    
+    DC-->>User: 所有服务就绪
+    
+    User->>Web: 访问 http://localhost:8088
+    Web->>UserSvc: 代理 API 请求
+    Web->>QuestionSvc: 代理 API 请求
 ```
 
 ---
