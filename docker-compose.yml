@@ -1,0 +1,73 @@
+services:
+  # 用户服务 - Spring Boot 应用
+  qa-service-user:
+    build:
+      context: ./server/qa-service-user
+      dockerfile: Dockerfile
+    container_name: qa-service-user
+    ports:
+      - "18080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SERVER_PORT=8080
+    networks:
+      - qa-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # 问题服务 - Spring Boot 应用
+  qa-service-question:
+    build:
+      context: ./server/qa-service-question
+      dockerfile: Dockerfile
+    container_name: qa-service-question
+    ports:
+      - "18081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SERVER_PORT=8081
+    networks:
+      - qa-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://localhost:8081/ | grep -E '404|200'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # 前端服务 - Nginx + Vue.js
+  qa-web:
+    build:
+      context: ./web/qa-web
+      dockerfile: Dockerfile
+    container_name: qa-web
+    ports:
+      - "8088:80"
+    depends_on:
+      qa-service-user:
+        condition: service_healthy
+      qa-service-question:
+        condition: service_healthy
+    networks:
+      - qa-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  qa-network:
+    driver: bridge
+
+# 可选：添加持久化卷（未来用于数据库）
+# volumes:
+#   qa-db-data:
