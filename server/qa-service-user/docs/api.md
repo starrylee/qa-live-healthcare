@@ -47,6 +47,222 @@ QA Service User 是医疗问答系统的用户管理服务，基于 Spring Boot 
 }
 ```
 
+### DoctorUserController
+
+**文件位置：** [../src/main/java/com/leansofx/qaserviceuser/controller/DoctorUserController.java](../src/main/java/com/leansofx/qaserviceuser/controller/DoctorUserController.java)
+
+医生用户管理控制器，提供医生用户的 CRUD 操作接口。
+
+| 方法 | 端点 | 描述 | 参数 | 请求体 | 响应 |
+|--------|----------|-------------|------------|--------------|----------|
+| GET | `/api/doctors` | 获取所有医生列表 | 无 | 无 | List&lt;DoctorUserDTO&gt; |
+| GET | `/api/doctors/{id}` | 根据 ID 获取医生信息 | id (路径参数) | 无 | DoctorUserDTO |
+| GET | `/api/doctors/username/{username}` | 根据用户名获取医生信息 | username (路径参数) | 无 | DoctorUserDTO |
+| GET | `/api/doctors/active` | 获取所有活跃医生列表 | 无 | 无 | List&lt;DoctorUserDTO&gt; |
+| POST | `/api/doctors` | 创建新医生 | 无 | DoctorUserDTO | DoctorUserDTO |
+| PUT | `/api/doctors/{id}` | 更新医生信息 | id (路径参数) | DoctorUserDTO | DoctorUserDTO |
+| DELETE | `/api/doctors/{id}` | 删除医生 | id (路径参数) | 无 | 无内容 (204) |
+
+#### 数据结构示例
+
+**DoctorUserDTO（医生用户数据传输对象）**
+```json
+{
+  "id": "doctor-001",
+  "username": "dr_zhang",
+  "password": "securepassword123",
+  "name": "张医生",
+  "title": "主任医师",
+  "department": "心内科",
+  "avatar": "https://example.com/avatars/dr_zhang.jpg",
+  "experience": "20年临床经验",
+  "specialties": ["冠心病", "高血压", "心律失常"],
+  "isActive": true
+}
+```
+
+**字段说明：**
+
+| 字段名 | 类型 | 必填 | 描述 |
+|--------|------|------|------|
+| id | String | 否 | 医生唯一标识（创建时可不传，由系统生成） |
+| username | String | 是 | 登录用户名 |
+| password | String | 是 | 登录密码 |
+| name | String | 是 | 医生姓名 |
+| title | String | 否 | 职称（如：主任医师、副主任医师等） |
+| department | String | 否 | 所属科室 |
+| avatar | String | 否 | 头像 URL |
+| experience | String | 否 | 从业经验描述 |
+| specialties | List&lt;String&gt; | 否 | 专业特长列表 |
+| isActive | Boolean | 否 | 是否激活状态（默认 true） |
+
+#### 使用示例
+
+**1. 获取所有医生列表**
+```bash
+curl -X GET http://localhost:8080/api/doctors
+```
+
+**响应示例：**
+```json
+[
+  {
+    "id": "doctor-001",
+    "username": "dr_zhang",
+    "password": "securepassword123",
+    "name": "张医生",
+    "title": "主任医师",
+    "department": "心内科",
+    "avatar": "https://example.com/avatars/dr_zhang.jpg",
+    "experience": "20年临床经验",
+    "specialties": ["冠心病", "高血压", "心律失常"],
+    "isActive": true
+  },
+  {
+    "id": "doctor-002",
+    "username": "dr_li",
+    "password": "securepassword456",
+    "name": "李医生",
+    "title": "副主任医师",
+    "department": "神经内科",
+    "avatar": "https://example.com/avatars/dr_li.jpg",
+    "experience": "15年临床经验",
+    "specialties": ["脑血管病", "癫痫", "头痛"],
+    "isActive": true
+  }
+]
+```
+
+**2. 根据 ID 获取医生信息**
+```bash
+curl -X GET http://localhost:8080/api/doctors/doctor-001
+```
+
+**成功响应（200）：**
+```json
+{
+  "id": "doctor-001",
+  "username": "dr_zhang",
+  "password": "securepassword123",
+  "name": "张医生",
+  "title": "主任医师",
+  "department": "心内科",
+  "avatar": "https://example.com/avatars/dr_zhang.jpg",
+  "experience": "20年临床经验",
+  "specialties": ["冠心病", "高血压", "心律失常"],
+  "isActive": true
+}
+```
+
+**未找到响应（404）：** 无内容
+
+**3. 根据用户名获取医生信息**
+```bash
+curl -X GET http://localhost:8080/api/doctors/username/dr_zhang
+```
+
+**成功响应（200）：** 同上
+
+**未找到响应（404）：** 无内容
+
+**4. 获取所有活跃医生列表**
+```bash
+curl -X GET http://localhost:8080/api/doctors/active
+```
+
+**响应示例：**
+```json
+[
+  {
+    "id": "doctor-001",
+    "username": "dr_zhang",
+    "password": "securepassword123",
+    "name": "张医生",
+    "title": "主任医师",
+    "department": "心内科",
+    "avatar": "https://example.com/avatars/dr_zhang.jpg",
+    "experience": "20年临床经验",
+    "specialties": ["冠心病", "高血压", "心律失常"],
+    "isActive": true
+  }
+]
+```
+
+**5. 创建新医生**
+```bash
+curl -X POST http://localhost:8080/api/doctors \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "dr_wang",
+    "password": "securepassword789",
+    "name": "王医生",
+    "title": "主治医师",
+    "department": "呼吸内科",
+    "avatar": "https://example.com/avatars/dr_wang.jpg",
+    "experience": "10年临床经验",
+    "specialties": ["哮喘", "肺炎", "慢性阻塞性肺病"],
+    "isActive": true
+  }'
+```
+
+**成功响应（200）：**
+```json
+{
+  "id": "doctor-003",
+  "username": "dr_wang",
+  "password": "securepassword789",
+  "name": "王医生",
+  "title": "主治医师",
+  "department": "呼吸内科",
+  "avatar": "https://example.com/avatars/dr_wang.jpg",
+  "experience": "10年临床经验",
+  "specialties": ["哮喘", "肺炎", "慢性阻塞性肺病"],
+  "isActive": true
+}
+```
+
+**6. 更新医生信息**
+```bash
+curl -X PUT http://localhost:8080/api/doctors/doctor-001 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "dr_zhang",
+    "password": "newpassword123",
+    "name": "张医生",
+    "title": "主任医师",
+    "department": "心内科",
+    "avatar": "https://example.com/avatars/dr_zhang_new.jpg",
+    "experience": "21年临床经验",
+    "specialties": ["冠心病", "高血压", "心律失常", "心力衰竭"],
+    "isActive": true
+  }'
+```
+
+**成功响应（200）：**
+```json
+{
+  "id": "doctor-001",
+  "username": "dr_zhang",
+  "password": "newpassword123",
+  "name": "张医生",
+  "title": "主任医师",
+  "department": "心内科",
+  "avatar": "https://example.com/avatars/dr_zhang_new.jpg",
+  "experience": "21年临床经验",
+  "specialties": ["冠心病", "高血压", "心律失常", "心力衰竭"],
+  "isActive": true
+}
+```
+
+**未找到响应（404）：** 无内容
+
+**7. 删除医生**
+```bash
+curl -X DELETE http://localhost:8080/api/doctors/doctor-001
+```
+
+**成功响应（204）：** 无内容
+
 ## Spring Boot Actuator 端点
 
 项目集成了 Spring Boot Actuator，提供了以下监控和管理端点：
