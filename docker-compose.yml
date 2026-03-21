@@ -1,4 +1,42 @@
 services:
+  # MySQL 数据库服务
+  healthcare_mysql:
+    image: mysql:8.0
+    container_name: healthcare_mysql
+    ports:
+      - "3307:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=healthcare
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=password
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --init-connect=SET NAMES utf8mb4
+      - --skip-character-set-client-handshake
+    volumes:
+      - healthcare_mysql_data:/var/lib/mysql
+    networks:
+      - healthcare_network
+    restart: unless-stopped
+
+  # phpMyAdmin 管理界面
+  healthcare_phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: healthcare_phpmyadmin
+    ports:
+      - "6080:80"
+    environment:
+      - PMA_HOST=healthcare_mysql
+      - MYSQL_CHARSET=utf8mb4
+      - MYSQL_COLLATION=utf8mb4_unicode_ci
+    depends_on:
+      - healthcare_mysql
+    networks:
+      - healthcare_network
+    restart: unless-stopped
+
   # 用户服务 - Spring Boot 应用
   qa-service-user:
     build:
@@ -67,7 +105,8 @@ services:
 networks:
   qa-network:
     driver: bridge
+  healthcare_network:
+    driver: bridge
 
-# 可选：添加持久化卷（未来用于数据库）
-# volumes:
-#   qa-db-data:
+volumes:
+  healthcare_mysql_data:
