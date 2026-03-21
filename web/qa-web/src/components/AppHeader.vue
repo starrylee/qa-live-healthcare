@@ -10,27 +10,43 @@
       <a-menu v-model:selectedKeys="selectedKeys" mode="horizontal" class="nav-menu desktop-menu">
         <a-menu-item key="home" @click="navigateTo('/')">
           <HomeOutlined />
-          首页
+          {{ t('header.home') }}
         </a-menu-item>
         <a-menu-item key="consultation" @click="navigateTo('/consultation')">
           <MessageOutlined />
-          问诊
+          {{ t('header.consultation') }}
         </a-menu-item>
         <a-menu-item key="doctors" @click="navigateTo('/doctors')">
           <TeamOutlined />
-          医生
+          {{ t('header.doctors') }}
         </a-menu-item>
         <a-menu-item key="about" @click="navigateTo('/about')">
           <InfoCircleOutlined />
-          关于
+          {{ t('header.about') }}
         </a-menu-item>
       </a-menu>
       
-      <!-- 桌面端登录按钮 -->
-      <a-button type="primary" class="login-btn desktop-menu" @click="navigateTo('/doctor/login')">
-        <UserOutlined />
-        医生登录
-      </a-button>
+      <!-- 桌面端右侧区域 -->
+      <div class="desktop-menu header-right">
+        <!-- 语言切换 -->
+        <a-dropdown>
+          <a-button type="text" class="lang-btn">
+            {{ currentLocaleName }}
+          </a-button>
+          <template #overlay>
+            <a-menu @click="handleLocaleChange">
+              <a-menu-item v-for="locale in availableLocales" :key="locale.code">
+                {{ locale.name }}
+              </a-menu-item>
+            </a-menu>
+          </template>
+        </a-dropdown>
+        <!-- 登录按钮 -->
+        <a-button type="primary" class="login-btn" @click="navigateTo('/doctor/login')">
+          <UserOutlined />
+          {{ t('header.doctorLogin') }}
+        </a-button>
+      </div>
       
       <!-- 移动端汉堡包按钮 -->
       <a-button type="text" class="hamburger-btn mobile-menu" @click="showMobileMenu = true">
@@ -46,7 +62,7 @@
         class="mobile-drawer"
       >
         <div class="drawer-header">
-          <span class="drawer-title">菜单</span>
+          <span class="drawer-title">{{ t('header.menu') }}</span>
           <a-button type="text" class="close-btn" @click="showMobileMenu = false">
             <CloseOutlined />
           </a-button>
@@ -60,7 +76,7 @@
             @click="navigateAndClose('/')"
           >
             <HomeOutlined />
-            <span>首页</span>
+            <span>{{ t('header.home') }}</span>
           </div>
           
           <div 
@@ -69,7 +85,7 @@
             @click="navigateAndClose('/consultation')"
           >
             <MessageOutlined />
-            <span>问诊</span>
+            <span>{{ t('header.consultation') }}</span>
           </div>
           
           <div 
@@ -78,7 +94,7 @@
             @click="navigateAndClose('/doctors')"
           >
             <TeamOutlined />
-            <span>医生</span>
+            <span>{{ t('header.doctors') }}</span>
           </div>
           
           <div 
@@ -87,7 +103,22 @@
             @click="navigateAndClose('/about')"
           >
             <InfoCircleOutlined />
-            <span>关于</span>
+            <span>{{ t('header.about') }}</span>
+          </div>
+          
+          <a-divider />
+          
+          <!-- 语言切换 -->
+          <div class="drawer-lang">
+            <div 
+              v-for="locale in availableLocales" 
+              :key="locale.code"
+              class="drawer-menu-item"
+              :class="{ active: currentLocale === locale.code }"
+              @click="changeLocaleAndClose(locale.code)"
+            >
+              <span>{{ locale.name }}</span>
+            </div>
           </div>
           
           <a-divider />
@@ -99,7 +130,7 @@
             @click="navigateAndClose('/doctor/login')"
           >
             <UserOutlined />
-            医生登录
+            {{ t('header.doctorLogin') }}
           </a-button>
         </div>
       </a-drawer>
@@ -108,14 +139,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { HomeOutlined, MessageOutlined, TeamOutlined, InfoCircleOutlined, UserOutlined, MenuOutlined, CloseOutlined } from '@ant-design/icons-vue';
+import { availableLocales } from '../locales';
 
+const { t, locale } = useI18n();
 const router = useRouter();
 const route = useRoute();
 const selectedKeys = ref<string[]>(['home']);
 const showMobileMenu = ref(false);
+
+const currentLocale = computed(() => locale.value);
+const currentLocaleName = computed(() => {
+  const found = availableLocales.find(l => l.code === locale.value);
+  return found ? found.name : '中文';
+});
 
 watch(() => route.path, (newPath) => {
   if (newPath === '/') {
@@ -136,6 +176,16 @@ const navigateTo = (path: string) => {
 const navigateAndClose = (path: string) => {
   router.push(path);
   showMobileMenu.value = false;
+};
+
+const handleLocaleChange = ({ key }: { key: string }) => {
+  locale.value = key;
+  localStorage.setItem('locale', key);
+};
+
+const changeLocaleAndClose = (code: string) => {
+  locale.value = code;
+  localStorage.setItem('locale', code);
 };
 </script>
 
@@ -188,6 +238,16 @@ const navigateAndClose = (path: string) => {
   border: none;
   margin: 0 40px;
   line-height: 64px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lang-btn {
+  color: #1890ff;
 }
 
 .login-btn {
@@ -266,6 +326,11 @@ const navigateAndClose = (path: string) => {
 
 .drawer-menu-item :deep(.anticon) {
   font-size: 18px;
+}
+
+.drawer-lang {
+  display: flex;
+  flex-direction: column;
 }
 
 .drawer-login-btn {
