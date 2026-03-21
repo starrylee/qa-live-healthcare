@@ -1,0 +1,23 @@
+{
+  "name": "001-doctor-list-page-test",
+  "version": "1.0.0",
+  "description": "医生列表页面数据加载验证测试 - E2E Test for Doctor List Page",
+  "scripts": {
+    "test": "ts-node scripts/test.ts",
+    "build": "tsc",
+    "clean": "rm -rf reports/001-doctor-list-page-result-*"
+  },
+  "dependencies": {
+    "playwright": "^1.40.0",
+    "dayjs": "^1.11.10"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
