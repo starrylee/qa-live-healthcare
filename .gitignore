@@ -146,3 +146,5 @@ out/
 
 # Training assets (if needed to be ignored)
 # _TRAINING_ASSETS/
+.codebuddy
+.asdm
