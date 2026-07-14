@@ -11,14 +11,29 @@
 | 版本 | 日期 | 修订人 | 修订内容 |
 | ------ | ------ | -------- | ---------- |
 | 1.0.0 | 2026-07-14 | AI Agent | 初始版本 |
+| 1.1.0 | 2026-07-14 | AI Agent | 阶段二详细设计补充（技术方案 / 数据模型 / 接口设计 / 依赖关系 / 风险与缓解 / 验收条件 DoD） |
 
 ---
 
 ## 目录
 
 - [1. 总体概述](#1-总体概述)
+  - [1.1 背景与目标](#11-背景与目标)
+  - [1.2 核心概念](#12-核心概念)
+  - [1.3 变更范围](#13-变更范围)
+  - [1.4 关键决策](#14-关键决策)
 - [2. 使用场景](#2-使用场景)
-<!-- 阶段二补充：技术方案、数据模型、接口设计、依赖关系、风险与缓解、验收条件 (DoD) -->
+  - [2.1 场景一：查看本人全部问诊记录](#21-场景一查看本人全部问诊记录)
+  - [2.2 场景二：按状态筛选问诊记录](#22-场景二按状态筛选问诊记录)
+  - [2.3 场景三：展开已回答记录查看答案](#23-场景三展开已回答记录查看答案)
+  - [2.4 场景四：大量记录的加载更多](#24-场景四大量记录的加载更多)
+  - [2.5 场景五：首次建档患者查看空状态](#25-场景五首次建档患者查看空状态)
+- [3. 技术方案](#3-技术方案)
+- [4. 数据模型](#4-数据模型)
+- [5. 接口设计](#5-接口设计)
+- [6. 依赖关系](#6-依赖关系)
+- [7. 风险与缓解](#7-风险与缓解)
+- [8. 验收条件 (DoD)](#8-验收条件-dod)
 
 ---
 
@@ -153,19 +168,173 @@
 ---
 
 ## 3. 技术方案
-<!-- 阶段二补充 -->
+
+> 设计依据：[FT-002 前端代码调研](./FT-002-patient-consultation-records-CodeResearch-web.md)、[FT-002 后端接口契约调研](./FT-002-patient-consultation-records-CodeResearch-question.md)。FT-002 定位为**纯前端展示层**，不改动后端领域逻辑。
+
+### 3.1 整体策略
+
+- 在患者门户「问诊记录」区块（复用 `Consultation.vue` 的「我的问题」区块，或新建 `PatientPortal` 视图）内，新增/改造问诊记录列表组件。
+- 数据来源切换为真实接口 `GET /api/questions?patientId=`（新建 `api/modules/question.ts`）；在 FT-001 接口就绪前，保留 `store.getQuestionsByPatient` 作为本地 mock 兜底，降低并行开发阻塞。
+- 全部患者门户文案迁移到 `locales` 的 `consultation.*` 命名空间，消除当前写死中文，支持中英文切换。
+
+### 3.2 组件设计
+
+| 组件 | 形式 | 说明 |
+|------|------|------|
+| `QuestionList.vue`（建议新建） | 页面区块组件 | 承载筛选标签页、列表渲染、分页「加载更多」、空状态编排 |
+| `QuestionItem.vue`（建议新建） | 列表项组件 | 单条记录：状态标签 + 摘要 + 内联手风琴展开（完整问题/答案/回复时间） |
+| 状态筛选 | `a-tabs` | 全部 / 待回答 / 已回答，纯前端按 `status` 过滤 |
+| 状态标签 | `a-tag` | 复用现有 `:color` 方案（`pending`→橙，`answered`→绿），文案走 i18n |
+| 展开交互 | `a-collapse` | 复用 `DoctorRoom.vue` 已有 `accordion` 模式 |
+| 空状态 | `a-empty` | 复用现有组件，文案改为 i18n「暂无问诊记录」 |
+| 分页 | slice + 加载更多 | 前端对已加载全量数据切片，首屏 N 条 + 「加载更多」追加 |
+
+### 3.3 关键逻辑
+
+- **倒序列表**：优先依赖接口按 `submitTime` 倒序返回；若接口顺序不确定，客户端以 `dayjs(submitTime).valueOf()` 降序 `sort` 兜底（注意 mock 为无时区 ISO 字符串，dayjs 默认本地时区，需与后端约定时区基准）。
+- **内容摘要**：对 `question` 文本截断约 50 个字符（中英文统一按字符数 `slice(0,50)`），超出追加「…」；折叠态显示摘要，展开态显示完整内容。
+- **状态映射**：`status` 值 `pending`→「待回答」、`answered`→「已回答」（仅两种，不展示 `closed`）。
+- **i18n**：新建 `consultation` 命名空间（`myQuestions` / `empty` / `status.pending` / `status.answered` / `tabs.*` / `loadMore` / `question` / `answer` / `submitTime` / `answerTime`），与现有 `header.*` / `home.*` 风格一致。
+- **加载更多**：维护 `visibleCount` 状态，初始 N（如 10），点击「加载更多」递增；到达数据末端隐藏按钮。
+
+---
 
 ## 4. 数据模型
-<!-- 阶段二补充 -->
+
+> FT-002 不涉及后端 schema 变更（qa-service-question 无变更）。以下为前端展示所需的 `Question` 数据形态，字段契约详见 §5。
+
+### 4.1 前端 Question 实体（复用现有 store 定义）
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| id | string | 是 | 问诊记录 ID（mock 示例 `q001`） |
+| patientId | string | 是 | 患者 ID |
+| patientName | string | 否 | 患者姓名（前端已自持，可不必由接口提供） |
+| doctorId | string | 是 | 医生 ID |
+| doctorName | string | 是 | 咨询医生姓名（由后端聚合，见 §5） |
+| question | string | 是 | 问题内容（后端 `content` 映射，见 §5） |
+| submitTime | string | 是 | 提交时间，ISO 8601 |
+| status | `'pending' \| 'answered'` | 是 | 状态枚举（仅两种） |
+| answer | string \| null | 否 | 医生回复，未回答为 `null` |
+| answerTime | string \| null | 否 | 回复时间，未回答为 `null` |
+
+### 4.2 数据来源
+
+- 运行态以 FT-001 接口 `GET /api/questions?patientId=` 返回为准，前端 `questionApi.getByPatientId(patientId)` 取数。
+- 开发/演示态沿用 `data/question-list.json` mock，经 `store.getQuestionsByPatient` 提供。
+
+---
 
 ## 5. 接口设计
-<!-- 阶段二补充 -->
+
+> 本节描述 FT-002 复用的接口契约。接口由 FT-001 规划、由 qa-service-question 提供，**当前尚未实现**（详见后端调研报告）。以下字段映射以 `server/docs/data-models.md` 规划模型为基准，前端按契约消费。
+
+### 5.1 获取患者问诊记录
+
+| 项 | 值 |
+|----|----|
+| 方法 | GET |
+| 路径 | `/api/questions` |
+| 服务 | qa-service-question（:8081） |
+| 说明 | 按 `patientId` 查询该患者全部问诊记录，由后端聚合 `doctorName` 后返回 |
+
+**请求参数**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| patientId | string | 是 | 患者 ID（需与 FT-001 建档返回的 `patientId` 类型一致） |
+| status | string | 否 | 状态过滤：`pending` / `answered`（可选） |
+| page / size | number | 否 | 若后端支持分页（建议前端优先客户端分页，不强制依赖） |
+
+**响应字段（DTO）**
+
+| 字段 | 类型 | 说明 | 后端来源映射 |
+|------|------|------|------|
+| id | string | 问诊记录 ID | `Question.id`（序列化格式待约定） |
+| patientId | string | 患者 ID | `Question.patient_id` |
+| doctorId | string | 医生 ID | `Question.doctor_id` |
+| doctorName | string | 医生姓名 | `User.real_name`（经 `doctor_id` 关联/聚合） |
+| question | string | 问题内容 | `Question.content`（或 `title+content`，待确认） |
+| submitTime | string(ISO8601) | 提交时间 | `Question.created_at` |
+| status | `'pending' \| 'answered'` | 状态 | `Question.status`（`pending`/`answered`/`closed` 仅取前两者） |
+| answer | string \| null | 医生回复 | `Answer.content`（跨表 1:1，无则 `null`） |
+| answerTime | string \| null | 回复时间 | `Answer.created_at`（无则 `null`） |
+
+### 5.2 状态枚举映射
+
+| 后端（规划） | 前端契约值 | 展示文案 |
+|------|------|------|
+| PENDING(0) | `pending` | 待回答 |
+| ANSWERED(1) | `answered` | 已回答 |
+| CLOSED(2) | 不纳入本期 | — |
+
+> 契约约定：接口以字符串 `pending`/`answered` 返回（而非序数），与前端模型一致；`closed` 不在 FT-002 展示范围。
+
+### 5.3 待 FT-001 / 后端确认
+
+- 端点 `GET /api/questions?patientId=` 落地实现（Controller/Service/Repository/DTO）。
+- `Question`/`Answer` 实体与 `QuestionStatus` 枚举代码化。
+- `doctorName` 聚合方式（同库 join `t_user` 或跨服务调用 qa-service-user）。
+- `patientId` 类型对齐（字符串 vs 数字），避免过滤失效。
+
+---
 
 ## 6. 依赖关系
-<!-- 阶段二补充 -->
+
+| 依赖项 | 类型 | 说明 |
+|------|------|------|
+| FT-001 患者身份验证与自动建档 | 上游特性（强依赖） | 提供患者登录态、`currentPatient.id`（即 `patientId`）、以及 `GET /api/questions?patientId=` 接口 |
+| qa-service-question | 外部服务 | 提供历史问诊查询接口（FT-002 唯一数据来源） |
+| qa-service-user | 间接依赖 | `doctorName` 由 question 服务聚合 `t_user.real_name` 提供，前端不直连 |
+| 前端内部 | 模块内 | `store.state.currentPatient`（患者定位）、`api/modules/question.ts`（取数）、`locales`（i18n）、`dayjs`（时间格式化）、Ant Design Vue（`a-tag`/`a-collapse`/`a-tabs`/`a-empty`） |
+
+---
 
 ## 7. 风险与缓解
-<!-- 阶段二补充 -->
+
+| # | 风险 | 影响 | 缓解措施 |
+|----|------|------|----------|
+| R1 | FT-001 接口 `GET /api/questions?patientId=` 尚未实现 | 真实取数链路阻塞 | 开发期以 `data/question-list.json` mock + `store` 兜底并行推进 UI，接口就绪后切 `questionApi` |
+| R2 | 状态/字段命名差异（`question`↔`content`、`submitTime`↔`created_at`、`answerTime`↔`Answer.created_at`、`doctorName` 需聚合） | 前后端字段错位 | 锁定 §5 字段映射契约，DTO 层统一转换，前后端评审确认 |
+| R3 | `patientId` 类型不一致（字符串 `patient001` vs 数字） | 过滤失效、查不到数据 | 与 FT-001 对齐 `patientId` 类型，单一来源 |
+| R4 | 倒序时区基准（mock 无时区 ISO vs 后端 LocalDateTime） | 排序错乱 | 约定时间统一 ISO 8601 + 时区；优先依赖接口倒序返回 |
+| R5 | 大数据量下纯客户端分页的内存与体验 | 首屏/滚动性能 | 控制首屏条数 + 「加载更多」；预留后端分页切换（§5 可选参数） |
+| R6 | 摘要「约 50 字」中英文混排截断 | 截断位置不自然 | 按字符数 `slice(0,50)` + 省略号，明确规则；不按字节 |
+
+---
 
 ## 8. 验收条件 (DoD)
-<!-- 阶段二补充 -->
+
+> **状态说明**：
+> - **已完成**：✅ 该功能点已实现，无需额外开发
+> - **部分完成**：🟡 该功能点部分实现，需进一步完善
+> - **待实现**：❌ 该功能点尚未实现，需要在开发阶段实现
+
+### 8.1 核心功能
+
+| 编号 | 完成点 | 说明 | 状态 | 完成状态说明 |
+| :----: | -------- | ------ | :----: | ---------- |
+| 8.1.1 | 倒序列表展示 | 按提交时间倒序渲染本人全部问诊记录 | ❌ | 待开发（依赖接口/前端 sort） |
+| 8.1.2 | 状态标签 | 每条记录以标签区分「待回答 / 已回答」 | 🟡 | 现有 a-tag 雏形，待 i18n 与映射完善 |
+| 8.1.3 | 内容摘要 | 折叠态截断约 50 字 + 省略号 | ❌ | 待开发（参考 DoctorRoom 截断逻辑） |
+| 8.1.4 | 内联手风琴展开 | 已回答项展开完整问题 + 医生回复 + 回复时间 | ❌ | 待开发（复用 a-collapse） |
+| 8.1.5 | 状态筛选标签页 | 全部 / 待回答 / 已回答，纯前端过滤 | ❌ | 待开发（新建 a-tabs） |
+| 8.1.6 | 空状态 | 无记录时显示「暂无问诊记录」 | 🟡 | 现有 a-empty，待改为 i18n 文案 |
+| 8.1.7 | 客户端分页 | 「加载更多」追加后续记录 | ❌ | 待开发 |
+| 8.1.8 | 数据来源接口化 | 调用 `GET /api/questions?patientId=` 取数 | ❌ | 待 FT-001 接口实现后接 `questionApi` |
+
+### 8.2 体验一致性
+
+| 编号 | 完成点 | 说明 | 状态 | 完成状态说明 |
+| :----: | -------- | ------ | :----: | ---------- |
+| 8.2.1 | 国际化 | 患者门户问诊相关文案迁移至 `consultation.*` 并支持中英切换 | ❌ | 待开发（当前写死中文） |
+| 8.2.2 | 时间格式 | 提交/回复时间统一 `YYYY-MM-DD HH:mm`（dayjs） | 🟡 | 现有 formatTime 已支持 |
+| 8.2.3 | 组件风格统一 | 复用 Ant Design Vue 组件与现有门户视觉 | 🟡 | 现有 a-card/a-tag/a-empty 基础具备 |
+
+### 8.3 非功能需求
+
+| 编号 | 完成点 | 说明 | 状态 | 完成状态说明 |
+| :----: | -------- | ------ | :----: | ---------- |
+| 8.3.1 | 性能 | 首屏轻量（控制初始条数），加载更多平滑 | ❌ | 待开发 |
+| 8.3.2 | 兼容性 | 未回答项 `answer`/`answerTime` 为 null 时正常渲染 | ❌ | 待开发（接口契约保障） |
+| 8.3.3 | 可维护性 | 抽取 `QuestionList.vue` / `QuestionItem.vue` 组件 | ❌ | 待开发（建议拆分粒度） |
