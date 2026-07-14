@@ -146,7 +146,7 @@ QA Healthcare 是一个基于微服务架构的前后端分离医疗问答系统
 
 | 编号 | 特性名称 | 优先级 | 状态 | 说明 |
 | :----: | ---------- | :------: | :----: | ------ |
-| FT-001 | [患者身份验证与自动建档](feat/FT-001-patient-identity-verification/FT-001-patient-identity-verification-AskMe.md) | P1 | 🟣 澄清中 | 患者通过姓名+出生日期验证身份，首次自动建立健康档案（生成业务键），无需注册账号，支持查看历史问诊与切换用户 |
+| FT-001 | [患者身份验证与自动建档](feat/FT-001-patient-identity-verification/FT-001-patient-identity-verification-PRD.md) | P1 | 🟠 设计中 | 患者通过姓名+出生日期验证身份，首次自动建立健康档案（生成业务键），无需注册账号，支持查看历史问诊与切换用户 |
 
 ---
 
